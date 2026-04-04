@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import ParticleBackground from './components/ParticleBackground';
 import Navbar from './components/Navbar';
+import CustomCursor from './components/CustomCursor';
 import Hero from './sections/Hero';
 import Footer from './components/Footer';
 
@@ -53,6 +54,9 @@ function SectionLoader() {
 export default function App() {
   return (
     <>
+      {/* Custom HUD Cursor */}
+      <CustomCursor />
+
       {/* Animated particle background with cursor glow */}
       <ParticleBackground />
 

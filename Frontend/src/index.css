@@ -845,3 +845,19 @@ body {
   background: linear-gradient(90deg, transparent, var(--arc-blue), transparent);
   margin: 0;
 }
+
+/* ─── CUSTOM CURSOR STYLES ─── */
+body.cursor-none-global,
+body.cursor-none-global * {
+  cursor: none !important;
+}
+
+@keyframes arc-pulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+}
+
+.arc-pulse {
+  animation: arc-pulse 2.5s infinite ease-in-out;
+}

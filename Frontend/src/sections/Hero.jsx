@@ -43,71 +43,74 @@ const ICON_MAP = {
   mail: Mail,
 };
 
-/** Arc Reactor visual — center glow element */
-function ArcReactor() {
+/** Profile Image Visual — Stark HUD style */
+function ProfileVisual({ imageUrl = "/profile.jpg" }) {
   return (
-    <div className="arc-reactor" style={{ width: 320, height: 320 }}>
+    <div className="arc-reactor" style={{ width: 340, height: 340, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       {/* Outer decorative rings */}
-      <div className="arc-ring arc-ring-4" />
-      <div className="arc-ring arc-ring-3" />
-      <div className="arc-ring arc-ring-2" />
-      <div className="arc-ring arc-ring-1" />
+      <div className="arc-ring arc-ring-4" style={{ width: '100%', height: '100%', animationDuration: '15s', opacity: 0.6 }} />
+      <div className="arc-ring arc-ring-3" style={{ width: '85%', height: '85%', animationDuration: '20s', animationDirection: 'reverse', opacity: 0.4 }} />
 
-      {/* Inner core panel */}
-      <div style={{
-        position: 'absolute',
-        width: 200, height: 200,
-        borderRadius: '50%',
-        border: '1px solid rgba(0, 212, 255, 0.2)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%)',
-      }}>
-        {/* Hexagonal segments */}
-        {[0, 60, 120, 180, 240, 300].map((deg) => (
-          <div key={deg} style={{
-            position: 'absolute',
-            width: 3, height: 60,
-            background: 'linear-gradient(180deg, rgba(0,212,255,0.5), transparent)',
-            transformOrigin: 'bottom center',
-            transform: `rotate(${deg}deg) translateX(-50%)`,
-            left: '50%',
-            bottom: '50%',
-            borderRadius: '2px 2px 0 0',
-          }} />
-        ))}
-      </div>
-
-      {/* Core */}
-      <div className="arc-core" style={{ position: 'relative', zIndex: 10 }}>
-        {/* Inner hex pattern */}
-        <div style={{
+      {/* Image Container with floating effect */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1, y: [0, -8, 0] }}
+        transition={{ 
+          opacity: { duration: 1.2, ease: "easeOut" },
+          scale: { duration: 1.2, ease: "easeOut" },
+          y: { duration: 6, repeat: Infinity, ease: "easeInOut" }
+        }}
+        style={{
           position: 'absolute',
-          inset: 8,
+          width: 250, height: 250,
           borderRadius: '50%',
-          border: '2px solid rgba(255,255,255,0.4)',
-        }} />
+          overflow: 'hidden',
+          border: '2px solid rgba(0, 212, 255, 0.4)',
+          boxShadow: '0 0 35px rgba(0, 212, 255, 0.25), inset 0 0 20px rgba(0, 212, 255, 0.5)',
+          zIndex: 10,
+          background: 'rgba(6, 10, 18, 0.9)'
+        }}
+      >
+        <motion.img 
+          src={imageUrl} 
+          alt="Bhuvan Warshe" 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) saturate(0.85) brightness(0.95)' }}
+          whileHover={{ scale: 1.08, filter: 'contrast(1.15) saturate(1.1) brightness(1.05)' }}
+          transition={{ duration: 0.5 }}
+        />
+        
+        {/* Glass overlay */}
         <div style={{
-          position: 'absolute',
-          inset: 18,
-          borderRadius: '50%',
-          border: '1px solid rgba(255,255,255,0.2)',
+           position: 'absolute', inset: 0,
+           background: 'radial-gradient(circle, transparent 40%, rgba(0,212,255,0.2) 100%)',
+           pointerEvents: 'none'
         }} />
-      </div>
+        
+        {/* Scanning line animation */}
+        <motion.div
+           animate={{ top: ['-10%', '110%'] }}
+           transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+           style={{
+             position: 'absolute', left: 0, right: 0, height: 2,
+             background: 'linear-gradient(90deg, transparent, rgba(0,212,255,0.8), transparent)',
+             boxShadow: '0 0 12px rgba(0,212,255,0.5)',
+             pointerEvents: 'none'
+           }}
+        />
+      </motion.div>
 
-      {/* Corner HUD brackets */}
+      {/* Floating HUD Brackets around the image */}
       {[
-        { top: '5%', left: '5%', transform: '' },
-        { top: '5%', right: '5%', transform: 'scaleX(-1)' },
-        { bottom: '5%', left: '5%', transform: 'scaleY(-1)' },
-        { bottom: '5%', right: '5%', transform: 'scale(-1)' },
+        { top: '8%', left: '8%', transform: '' },
+        { top: '8%', right: '8%', transform: 'scaleX(-1)' },
+        { bottom: '8%', left: '8%', transform: 'scaleY(-1)' },
+        { bottom: '8%', right: '8%', transform: 'scale(-1)' },
       ].map((pos, i) => (
         <div key={i} style={{
           position: 'absolute',
-          width: 20, height: 20,
-          borderTop: '2px solid rgba(0,212,255,0.6)',
-          borderLeft: '2px solid rgba(0,212,255,0.6)',
+          width: 25, height: 25,
+          borderTop: '3px solid rgba(0,212,255,0.8)',
+          borderLeft: '3px solid rgba(0,212,255,0.8)',
           ...pos,
         }} />
       ))}
@@ -413,12 +416,9 @@ export default function Hero() {
             <HudChip label="MODE" value="BUILD" style={{ bottom: '20%', left: '-8%' }} delay={1.4} />
             <HudChip label="OUTPUT" value="PROD" style={{ bottom: '10%', right: '2%' }} delay={1.6} />
 
-            {/* Arc Reactor with float animation */}
-            <motion.div
-              animate={{ y: [0, -14, 0] }}
-              transition={{ duration: 6, ease: 'easeInOut', repeat: Infinity }}
-            >
-              <ArcReactor />
+            {/* Profile Visual with float animation */}
+            <motion.div>
+              <ProfileVisual />
             </motion.div>
           </motion.div>
         </div>

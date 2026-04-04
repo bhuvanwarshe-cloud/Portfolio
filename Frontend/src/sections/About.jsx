@@ -98,12 +98,48 @@ export default function About() {
           gap: '4rem',
           alignItems: 'start',
         }}>
-          {/* ── Left: HUD Code Block ── */}
+          {/* ── Left: Identity Card & Code Block ── */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             animate={isInView ? { opacity: 1, x: 0 } : {}}
             transition={{ duration: 0.7, delay: 0.2 }}
           >
+            {/* Clean Profile Image — Captain America Style (Structured, clear) */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1.25rem',
+              marginBottom: '2rem',
+              padding: '1.25rem',
+              background: 'rgba(6, 10, 18, 0.6)',
+              border: '1px solid rgba(0, 212, 255, 0.15)',
+              borderRadius: '12px',
+              borderLeft: '4px solid #00d4ff',
+            }}>
+              <div style={{
+                width: 70, height: 70,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                border: '2px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+                flexShrink: 0
+              }}>
+                <img 
+                  src="/profile.jpg" 
+                  alt="Bhuvan Warshe Profile" 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(20%) contrast(1.1)' }} 
+                />
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-heading)', fontWeight: 700, fontSize: '1.2rem', color: '#e8f4fd', marginBottom: '0.2rem' }}>
+                  Bhuvan Warshe
+                </div>
+                <div style={{ fontFamily: 'var(--font-hud)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'rgba(0, 212, 255, 0.8)', textTransform: 'uppercase' }}>
+                  Clearance Level: Admin
+                </div>
+              </div>
+            </div>
+
             <div className="code-block hud-panel" style={{ position: 'relative' }}>
               {/* Mac dots + filename */}
               <div style={{ display: 'flex', gap: '6px', marginBottom: '1.25rem', alignItems: 'center' }}>
