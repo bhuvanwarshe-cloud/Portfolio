@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
+import { FaGithub, FaLinkedin } from 'react-icons/fa';
 import { navLinks, personalInfo } from '../data/portfolioData';
+import { links } from '../data/links';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -84,6 +86,37 @@ export default function Navbar() {
               transition={{ duration: 0.4, delay: i * 0.07 }}
             >
               {link.label}
+            </motion.a>
+          ))}
+
+          {/* Social Icon Links */}
+          {[
+            { href: links.github, Icon: FaGithub, label: 'GitHub' },
+            { href: links.linkedin, Icon: FaLinkedin, label: 'LinkedIn' },
+          ].map(({ href, Icon, label }) => (
+            <motion.a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.45 }}
+              whileHover={{ scale: 1.15, color: '#00d4ff' }}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                width: 34, height: 34,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                borderRadius: '4px',
+                border: '1px solid rgba(0,212,255,0.15)',
+                background: 'rgba(6,10,18,0.8)',
+                color: 'var(--text-secondary)',
+                textDecoration: 'none',
+                transition: 'all 0.25s ease',
+              }}
+            >
+              <Icon size={16} />
             </motion.a>
           ))}
 
@@ -185,6 +218,36 @@ export default function Navbar() {
                 >
                   <span>Hire Me</span>
                 </motion.a>
+                {/* Social links in mobile menu */}
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+                  {[
+                    { href: links.github, Icon: FaGithub, label: 'GitHub' },
+                    { href: links.linkedin, Icon: FaLinkedin, label: 'LinkedIn' },
+                  ].map(({ href, Icon, label }) => (
+                    <motion.a
+                      key={label}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      style={{
+                        width: 38, height: 38,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(0,212,255,0.2)',
+                        background: 'rgba(6,10,18,0.8)',
+                        color: 'var(--text-secondary)',
+                        textDecoration: 'none',
+                      }}
+                      whileHover={{ color: '#00d4ff', borderColor: 'rgba(0,212,255,0.5)', scale: 1.1 }}
+                    >
+                      <Icon size={17} />
+                    </motion.a>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>

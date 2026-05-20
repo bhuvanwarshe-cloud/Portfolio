@@ -3,6 +3,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { ExternalLink, X, Lock, Zap, Star } from 'lucide-react';
 import { FaGithub } from 'react-icons/fa';
 import { projects } from '../data/portfolioData';
+import { links } from '../data/links';
 
 function useScrollReveal() {
   const ref = useRef(null);
@@ -506,7 +507,7 @@ export default function Projects() {
           style={{ textAlign: 'center', marginTop: '3.5rem' }}
         >
           <a
-            href="https://github.com/bhuvanwarshe"
+            href={links.github}
             target="_blank"
             rel="noopener noreferrer"
             className="btn-outline"

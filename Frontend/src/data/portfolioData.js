@@ -1,14 +1,15 @@
 // ─── Portfolio Data ───────────────────────────────────────────────
 // Centralized dataset for Bhuvan Warshe's portfolio
+import { links } from './links';
 
 export const personalInfo = {
   name: "Bhuvan Warshe",
   role: "Full Stack Developer",
   tagline: "I build real systems, not just projects.",
-  email: "bhuvanwarshe@gmail.com",
+  email: links.email,
   location: "India",
-  github: "https://github.com/bhuvanwarshe",
-  linkedin: "https://linkedin.com/in/bhuvanwarshe",
+  github: links.github,
+  linkedin: links.linkedin,
   twitter: "https://twitter.com/bhuvanwarshe",
   resume: "#",
   avatar: null,
@@ -88,7 +89,7 @@ export const projects = [
     tech: ["React", "Node.js", "Express", "Cricket API", "WebSockets"],
     color: "#00d4ff",
     gradient: "linear-gradient(135deg, #00d4ff 0%, #0ea5e9 100%)",
-    github: "https://github.com/bhuvanwarshe/cricpulsex",
+    github: links.github,
     demo: "#",
     featured: true,
     category: "Full Stack",
@@ -103,8 +104,8 @@ export const projects = [
     tech: ["React", "Node.js", "Supabase", "PostgreSQL", "OpenRouter AI"],
     color: "#a855f7",
     gradient: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
-    github: "https://github.com/bhuvanwarshe/campusflow",
-    demo: "#",
+    github: links.campusflowRepo,
+    demo: links.campusflow,
     featured: true,
     category: "Full Stack",
     icon: "🎓",
@@ -137,10 +138,10 @@ export const navLinks = [
 ];
 
 export const socialLinks = [
-  { label: "GitHub", href: "https://github.com/bhuvanwarshe", icon: "github" },
-  { label: "LinkedIn", href: "https://linkedin.com/in/bhuvanwarshe", icon: "linkedin" },
+  { label: "GitHub", href: links.github, icon: "github" },
+  { label: "LinkedIn", href: links.linkedin, icon: "linkedin" },
   { label: "Twitter", href: "https://twitter.com/bhuvanwarshe", icon: "twitter" },
-  { label: "Email", href: "mailto:bhuvanwarshe@gmail.com", icon: "mail" },
+  { label: "Email", href: links.mailto, icon: "mail" },
 ];
 
 export const mindsetValues = [
