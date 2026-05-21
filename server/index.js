@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import contactRoutes from './routes/contact.routes.js';
+import { globalRateLimiter } from './middleware/rateLimiter.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -49,6 +50,9 @@ app.use(cors(corsOptions));
 // ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ─── Global Rate Limiter (broad protection across all routes) ─────────────────
+app.use(globalRateLimiter);
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/contact', contactRoutes);
