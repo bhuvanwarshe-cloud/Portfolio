@@ -3,41 +3,75 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import contactRoutes from './routes/contact.routes.js';
 
-// Load environment variables
+// Load environment variables from .env file
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-// Enable CORS for frontend communication
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN || '*',
-  methods: ['POST', 'GET']
-}));
+// ─── CORS Configuration ───────────────────────────────────────────────────────
+// Build allowed origins from env variable — supports comma-separated list
+// e.g. ALLOWED_ORIGINS=https://bhuvanwarshe.vercel.app,http://localhost:5173
+const rawOrigins = process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '';
+const allowedOrigins = rawOrigins
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
 
-// Parse JSON request bodies
+// If no origin is configured, default to allowing all (useful for initial setup)
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (e.g. Postman, curl, server-to-server)
+    if (!origin) return callback(null, true);
+
+    // Allow if in our whitelist OR if no origins configured (open mode)
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`CORS blocked request from: ${origin}`);
+    return callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+  optionsSuccessStatus: 200, // Some browsers (IE11) choke on 204
+};
+
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors(corsOptions));
+
+// Apply CORS middleware globally
+app.use(cors(corsOptions));
+
+// ─── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
-// Mount contact routes at /api/contact
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/contact', contactRoutes);
 
-// Basic health check route
+// Health check — visit the backend URL root to confirm it's alive
 app.get('/', (req, res) => {
-  res.status(200).json({ message: 'Portfolio backend is running perfectly.' });
-});
-
-// Global error handler for unhandled errors
-app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err);
-  res.status(500).json({
-    success: false,
-    message: 'An unexpected server error occurred.'
+  res.status(200).json({
+    success: true,
+    message: 'Portfolio backend is running perfectly.',
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Start the server
+// ─── Global Error Handler ─────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error('Unhandled Error:', err.message);
+  res.status(500).json({
+    success: false,
+    message: 'An unexpected server error occurred.',
+  });
+});
+
+// ─── Start Server ─────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`📧 Email configured: ${process.env.EMAIL_USER || 'NOT SET'}`);
+  console.log(`🌐 Allowed origins: ${allowedOrigins.length ? allowedOrigins.join(', ') : 'ALL (open)'}`);
 });

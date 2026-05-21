@@ -46,6 +46,9 @@ export default function Contact() {
         email: form.email,
         subject: form.subject,
         message: form.message,
+      }, {
+        timeout: 30000, // 30s — handles Render free-tier cold start delay
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (response.data.success) {
@@ -55,7 +58,12 @@ export default function Contact() {
         setStatus('error');
       }
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to send message. Please try again.';
+      let msg = 'Failed to send message. Please try again.';
+      if (err.code === 'ECONNABORTED') {
+        msg = 'Server is warming up (cold start). Please wait 30 seconds and try again.';
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      }
       setErrorMsg(msg);
       setStatus('error');
     }
