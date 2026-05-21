@@ -17,10 +17,11 @@ const transporter = nodemailer.createTransport({
  * @param {Object} data - The contact form data
  * @param {string} data.name - Sender's name
  * @param {string} data.email - Sender's email
+ * @param {string} [data.subject] - Sender's subject
  * @param {string} data.message - Sender's message
  * @returns {Promise<boolean>} - True if sent successfully
  */
-export const sendContactEmail = async ({ name, email, message }) => {
+export const sendContactEmail = async ({ name, email, subject, message }) => {
   try {
     // Current timestamp for the email
     const timestamp = new Date().toLocaleString('en-US', {
@@ -39,6 +40,7 @@ export const sendContactEmail = async ({ name, email, message }) => {
         </div>
         <div style="padding: 20px; background-color: #f9f9f9;">
           <p><strong>From:</strong> ${name} (<a href="mailto:${email}">${email}</a>)</p>
+          <p><strong>Subject:</strong> ${subject || 'New Contact Request'}</p>
           <p><strong>Date:</strong> ${timestamp}</p>
           <hr style="border: 0; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
           <h3 style="margin-top: 0; color: #2c3e50;">Message:</h3>
@@ -56,8 +58,8 @@ export const sendContactEmail = async ({ name, email, message }) => {
     const mailOptions = {
       from: `"${name} (Portfolio)" <${process.env.EMAIL_USER}>`, // Sender address (uses your authenticated email for reliable delivery)
       replyTo: email, // Allows you to hit "Reply" and email the person back directly
-      to: process.env.EMAIL_USER, // Send it to your own inbox
-      subject: `Portfolio Contact: ${name}`, // Subject line
+      to: 'bhuvanwarshe@gmail.com', // Your personal inbox — receives all contact form emails
+      subject: `Portfolio Contact: ${subject || 'New Contact Request'}`, // Subject line
       html: htmlContent, // HTML body
     };
 

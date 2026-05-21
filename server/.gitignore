@@ -8,6 +8,7 @@ yarn.lock
 .env.local
 .env.example
 .env.*.local
+.gitignore
 
 # IDE
 .vscode/
@@ -15,6 +16,7 @@ yarn.lock
 *.swp
 *.swo
 *~
+has-symbols
 
 # OS
 .DS_Store

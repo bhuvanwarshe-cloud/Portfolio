@@ -2,7 +2,7 @@ import { sendContactEmail } from '../utils/email.util.js';
 
 export const handleContactSubmit = async (req, res) => {
   try {
-    const { name, email, message } = req.body;
+    const { name, email, subject, message } = req.body;
 
     // 1. Validate fields are provided and not empty
     if (!name || !name.trim()) {
@@ -25,6 +25,7 @@ export const handleContactSubmit = async (req, res) => {
     await sendContactEmail({
       name: name.trim(),
       email: email.trim(),
+      subject: subject ? subject.trim() : 'New Contact Request',
       message: message.trim()
     });
 

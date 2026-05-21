@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import axios from 'axios';
 import { motion, useInView } from 'framer-motion';
 import { Mail, Send, MapPin, CheckCircle, Loader } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
@@ -27,14 +28,36 @@ const SOCIAL_COLORS = {
 export default function Contact() {
   const { ref: headRef, isInView } = useScrollReveal();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
-    setTimeout(() => setStatus('sent'), 1800);
+    setErrorMsg('');
+
+    try {
+      // Send form data to the Express backend
+      const response = await axios.post('http://localhost:5000/api/contact', {
+        name: form.name,
+        email: form.email,
+        subject: form.subject,
+        message: form.message,
+      });
+
+      if (response.data.success) {
+        setStatus('sent');
+      } else {
+        setErrorMsg(response.data.message || 'Something went wrong. Please try again.');
+        setStatus('error');
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Failed to send message. Please try again.';
+      setErrorMsg(msg);
+      setStatus('error');
+    }
   };
 
   return (
@@ -213,7 +236,7 @@ export default function Contact() {
                   </p>
                 </div>
                 <motion.button
-                  onClick={() => { setStatus('idle'); setForm({ name: '', email: '', subject: '', message: '' }); }}
+                  onClick={() => { setStatus('idle'); setErrorMsg(''); setForm({ name: '', email: '', subject: '', message: '' }); }}
                   className="btn-outline"
                   whileHover={{ scale: 1.05 }}
                   style={{ marginTop: '0.5rem' }}
@@ -275,6 +298,24 @@ export default function Contact() {
                       style={{ resize: 'vertical', minHeight: 120 }}
                     />
                   </div>
+
+                  {/* Error message shown if submission fails */}
+                  {status === 'error' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      style={{
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(255,32,32,0.08)',
+                        border: '1px solid rgba(255,32,32,0.3)',
+                        borderRadius: '6px',
+                        color: '#ff6b6b',
+                        fontSize: '0.875rem',
+                      }}
+                    >
+                      ⚠ {errorMsg}
+                    </motion.div>
+                  )}
 
                   <motion.button
                     type="submit"
