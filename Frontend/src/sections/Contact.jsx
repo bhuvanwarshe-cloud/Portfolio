@@ -1,9 +1,14 @@
 import { useState, useRef } from 'react';
 import axios from 'axios';
-import { motion, useInView } from 'framer-motion';
-import { Mail, Send, MapPin, CheckCircle, Loader } from 'lucide-react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { Mail, Send, MapPin, CheckCircle, Loader, Wifi } from 'lucide-react';
 import { FaGithub, FaLinkedin, FaTwitter } from 'react-icons/fa';
 import { personalInfo, socialLinks } from '../data/portfolioData';
+import { useBackendWarmup } from '../hooks/useBackendWarmup';
+
+// 90 seconds — enough for even the slowest Render cold start
+const AXIOS_TIMEOUT_MS = 90_000;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function useScrollReveal() {
   const ref = useRef(null);
@@ -27,11 +32,28 @@ const SOCIAL_COLORS = {
 
 export default function Contact() {
   const { ref: headRef, isInView } = useScrollReveal();
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [form, setForm]     = useState({ name: '', email: '', subject: '', message: '' });
   const [status, setStatus] = useState('idle'); // idle | sending | sent | error
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Warm up the Render backend as soon as this section mounts
+  const { isWarm, isWaking } = useBackendWarmup();
+
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+  // Sends the form — works whether backend is warm or cold
+  const sendMessage = async () => {
+    const response = await axios.post(`${API_URL}/api/contact`, {
+      name:    form.name,
+      email:   form.email,
+      subject: form.subject,
+      message: form.message,
+    }, {
+      timeout: AXIOS_TIMEOUT_MS,
+      headers: { 'Content-Type': 'application/json' },
+    });
+    return response;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,17 +61,7 @@ export default function Contact() {
     setErrorMsg('');
 
     try {
-      // Send form data to the Express backend
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const response = await axios.post(`${API_URL}/api/contact`, {
-        name: form.name,
-        email: form.email,
-        subject: form.subject,
-        message: form.message,
-      }, {
-        timeout: 30000, // 30s — handles Render free-tier cold start delay
-        headers: { 'Content-Type': 'application/json' },
-      });
+      const response = await sendMessage();
 
       if (response.data.success) {
         setStatus('sent');
@@ -60,13 +72,24 @@ export default function Contact() {
     } catch (err) {
       let msg = 'Failed to send message. Please try again.';
       if (err.code === 'ECONNABORTED') {
-        msg = 'Server is warming up (cold start). Please wait 30 seconds and try again.';
+        // Timed out even at 90s — extremely rare
+        msg = 'The server took too long to respond. Please try again in a moment.';
       } else if (err.response?.data?.message) {
         msg = err.response.data.message;
+      } else if (!err.response) {
+        // Network error — server unreachable
+        msg = 'Cannot reach the server. Please check your connection and try again.';
       }
       setErrorMsg(msg);
       setStatus('error');
     }
+  };
+
+  // One-click retry — resubmit the same form without clearing it
+  const handleRetry = (e) => {
+    setStatus('idle');
+    setErrorMsg('');
+    handleSubmit(e);
   };
 
   return (
@@ -308,24 +331,109 @@ export default function Contact() {
                     />
                   </div>
 
-                  {/* Error message shown if submission fails */}
-                  {status === 'error' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        padding: '0.75rem 1rem',
-                        background: 'rgba(255,32,32,0.08)',
-                        border: '1px solid rgba(255,32,32,0.3)',
-                        borderRadius: '6px',
-                        color: '#ff6b6b',
-                        fontSize: '0.875rem',
-                      }}
-                    >
-                      ⚠ {errorMsg}
-                    </motion.div>
-                  )}
+                  {/* ── Server warm-up status indicator ── */}
+                  <AnimatePresence>
+                    {isWaking && status === 'idle' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.6rem',
+                          padding: '0.65rem 1rem',
+                          background: 'rgba(0,212,255,0.05)',
+                          border: '1px solid rgba(0,212,255,0.15)',
+                          borderRadius: '6px',
+                          color: 'rgba(0,212,255,0.7)',
+                          fontSize: '0.8rem',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <Wifi size={13} />
+                        </motion.div>
+                        Connecting to server, please wait...
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
+                  {/* ── Sending status banner ── */}
+                  <AnimatePresence>
+                    {status === 'sending' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '0.6rem',
+                          padding: '0.65rem 1rem',
+                          background: 'rgba(0,212,255,0.05)',
+                          border: '1px solid rgba(0,212,255,0.15)',
+                          borderRadius: '6px',
+                          color: 'rgba(0,212,255,0.8)',
+                          fontSize: '0.8rem',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        >
+                          <Loader size={13} />
+                        </motion.div>
+                        {isWarm
+                          ? 'Transmitting signal...'
+                          : 'Connecting to server, please wait... (this may take up to 60s)'}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* ── Error banner with retry ── */}
+                  <AnimatePresence>
+                    {status === 'error' && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        style={{
+                          padding: '0.75rem 1rem',
+                          background: 'rgba(255,32,32,0.08)',
+                          border: '1px solid rgba(255,32,32,0.3)',
+                          borderRadius: '6px',
+                          color: '#ff6b6b',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.5rem',
+                        }}
+                      >
+                        <span>⚠ {errorMsg}</span>
+                        <button
+                          type="button"
+                          onClick={handleRetry}
+                          style={{
+                            alignSelf: 'flex-start',
+                            background: 'rgba(255,32,32,0.15)',
+                            border: '1px solid rgba(255,32,32,0.4)',
+                            borderRadius: '4px',
+                            color: '#ff6b6b',
+                            padding: '0.3rem 0.8rem',
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            fontFamily: 'var(--font-hud)',
+                            letterSpacing: '0.08em',
+                          }}
+                        >
+                          ↺ Retry
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* ── Submit button ── */}
                   <motion.button
                     type="submit"
                     className="btn-primary"
@@ -340,7 +448,7 @@ export default function Contact() {
                           <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
                             <Loader size={15} />
                           </motion.div>
-                          Transmitting...
+                          {isWarm ? 'Transmitting...' : 'Waking server...'}
                         </>
                       ) : (
                         <><Send size={15} /> Send Signal</>
