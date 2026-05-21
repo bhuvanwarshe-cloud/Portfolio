@@ -15,17 +15,19 @@ const PORT = process.env.PORT || 5000;
 const rawOrigins = process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '';
 const allowedOrigins = rawOrigins
   .split(',')
-  .map(o => o.trim())
+  .map(o => o.trim().replace(/\/$/, ''))  // ← strip any trailing slash
   .filter(Boolean);
 
 // If no origin is configured, default to allowing all (useful for initial setup)
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. Postman, curl, server-to-server)
+    // Allow requests with no origin (Postman, curl, server-to-server)
     if (!origin) return callback(null, true);
 
-    // Allow if in our whitelist OR if no origins configured (open mode)
-    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+    // Normalize: strip any trailing slash from the incoming origin too
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
 
