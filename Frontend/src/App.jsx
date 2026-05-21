@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import CustomCursor from './components/CustomCursor';
 import Hero from './sections/Hero';
 import Footer from './components/Footer';
+import { useBackendWarmup } from './hooks/useBackendWarmup';
 
 // Lazy-load sections below the fold
 const About = lazy(() => import('./sections/About'));
@@ -52,6 +53,9 @@ function SectionLoader() {
 }
 
 export default function App() {
+  // Ping the backend on app load to wake it from Render cold start
+  useBackendWarmup();
+
   return (
     <>
       {/* Custom HUD Cursor */}
