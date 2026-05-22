@@ -28,6 +28,14 @@ if (!process.env.EMAIL_PASS) {
 //   Port 587 uses STARTTLS (upgrades plain → encrypted mid-connection).
 //   Render's network sometimes drops STARTTLS handshakes → ETIMEDOUT.
 //   Port 465 is encrypted from byte 1 — no handshake to drop.
+// ─── Build Nodemailer Transporter ──────────────────────────────────────────────────
+console.log('🔧 Creating Nodemailer transporter...');
+console.log('   host   :', 'smtp.gmail.com');
+console.log('   port   :', 465);
+console.log('   secure :', true);
+console.log('   user   :', process.env.EMAIL_USER || '⚠️  NOT SET');
+console.log('   pass   :', process.env.EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET');
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
@@ -42,15 +50,18 @@ const transporter = nodemailer.createTransport({
   socketTimeout:     30000,  // 30s max for any socket operation
 });
 
-// ─── Verify transporter on startup ───────────────────────────────────────────
-// This checks that Gmail credentials are correct when the server boots.
-// Errors here mean EMAIL_USER or EMAIL_PASS is wrong — check Render env vars.
+// ─── Verify transporter on startup ──────────────────────────────────────────────────
+console.log('🔍 Verifying SMTP transporter connection...');
 transporter.verify((error, success) => {
   if (error) {
-    console.error('❌ SMTP transporter verification failed:', error.message);
-    console.error('   Check EMAIL_USER and EMAIL_PASS in your Render environment variables.');
+    console.error('❌ SMTP transporter verification FAILED:');
+    console.error('   message :', error.message);
+    console.error('   code    :', error.code    || 'N/A');
+    console.error('   command :', error.command || 'N/A');
+    console.error('   stack   :\n', error.stack);
+    console.error('   → Check EMAIL_USER and EMAIL_PASS in your Render environment variables.');
   } else {
-    console.log('✅ SMTP transporter is ready — emails will send successfully.');
+    console.log('✅ SMTP transporter verified — ready to send emails.');
   }
 });
 
@@ -157,16 +168,23 @@ export const sendContactEmail = async ({ name, email, subject, message }) => {
   };
 
   try {
+    console.log(`📤 sendMail — attempting to send to: bhuvanwarshe@gmail.com`);
+    console.log(`   from   : "${safeName} via Portfolio" <${process.env.EMAIL_USER}>`);
+    console.log(`   subject: Portfolio Contact: ${safeSubject}`);
+
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Email sent — Message ID: ${info.messageId}`);
+    console.log(`✅ sendMail succeeded — Message-ID: ${info.messageId}`);
   } catch (error) {
-    // Log the full error object so Render logs show the exact SMTP failure reason
-    console.error('❌ sendMail failed:', {
-      code:    error.code,
-      command: error.command,
-      message: error.message,
-    });
-    // Re-throw with a clean message for the controller to catch
-    throw new Error(`SMTP send failed: ${error.code || error.message}`);
+    // Log every available field — never swallow this
+    console.error('❌ sendMail threw an error:');
+    console.error('   message :', error.message);
+    console.error('   code    :', error.code    || 'N/A');
+    console.error('   command :', error.command || 'N/A');
+    console.error('   response:', error.response || 'N/A');
+    console.error('   stack   :\n', error.stack);
+
+    // Re-throw with the original error preserved so the controller
+    // catch block can log and return it fully
+    throw error;
   }
 };

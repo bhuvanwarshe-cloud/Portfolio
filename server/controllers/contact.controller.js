@@ -18,8 +18,13 @@ export const handleContactSubmit = async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
 
-    // ── Input validation ──────────────────────────────────────────────────────
-    // Check each required field individually so the frontend gets precise errors
+    // ── Log incoming request body for Render debugging ────────────────────────
+    console.log('📥 Incoming contact request body:', {
+      name:    name    || '(empty)',
+      email:   email   || '(empty)',
+      subject: subject || '(empty)',
+      message: message ? `${message.substring(0, 60)}...` : '(empty)',
+    });
 
     if (!name || !name.trim()) {
       return res.status(400).json({
@@ -51,8 +56,9 @@ export const handleContactSubmit = async (req, res) => {
       });
     }
 
-    // ── Log incoming request (helps trace issues in Render logs) ──────────────
+    // ── Log before sending ────────────────────────────────────────────────────
     console.log(`📩 Contact form submission from: ${name.trim()} <${email.trim()}>`);
+    console.log('📤 Calling sendContactEmail...');
 
     // ── Send email via Nodemailer ─────────────────────────────────────────────
     await sendContactEmail({
@@ -62,6 +68,8 @@ export const handleContactSubmit = async (req, res) => {
       message: message.trim(),
     });
 
+    console.log('✅ sendContactEmail resolved successfully — email delivered.');
+
     // ── Success ───────────────────────────────────────────────────────────────
     return res.status(200).json({
       success: true,
@@ -69,17 +77,20 @@ export const handleContactSubmit = async (req, res) => {
     });
 
   } catch (error) {
-    // Log the full error for Render logs — never swallow it silently
-    console.error('❌ Contact controller error:', error.message);
+    // ── Full error dump — visible in Render logs ──────────────────────────────
+    console.error('❌ Contact controller caught an error:');
+    console.error('   message :', error.message);
+    console.error('   code    :', error.code    || 'N/A');
+    console.error('   command :', error.command || 'N/A');
+    console.error('   stack   :\n', error.stack);
+    console.error('   full obj:', error);
 
-    // Distinguish SMTP failures from unknown errors for clearer responses
-    const isSmtpError = error.message?.includes('SMTP');
-
+    // Return full error details so you can read them directly on the frontend
+    // or in the Render logs during debugging
     return res.status(500).json({
       success: false,
-      message: isSmtpError
-        ? 'Failed to send your message due to a mail server issue. Please try again later.'
-        : 'An unexpected error occurred. Please try again.',
+      message: error.message,
+      stack:   error.stack,
     });
   }
 };
