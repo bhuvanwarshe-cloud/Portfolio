@@ -49,35 +49,45 @@ if (!EMAIL_PASS) {
 //     Safe to use here because we are explicitly connecting to smtp.gmail.com —
 //     we trust the destination, just not every intermediate hop.
 //
-//   connectionTimeout / greetingTimeout / socketTimeout: 30000
-//     Render free tier has cold start delays and slower network I/O.
-//     Without explicit timeouts, Nodemailer uses very short defaults (~10s)
-//     which expire before the SMTP handshake completes.
-//     30s gives the connection enough time to establish on a cold Render instance.
+//   connectionTimeout / greetingTimeout / socketTimeout: 60000
+//     60s timeouts (up from 30s) for maximum Render free tier cold start
+//     compatibility — gives the SMTP handshake the most possible time to
+//     complete on a freshly-woken Render instance.
+//
+//   tls.ciphers: 'SSLv3'
+//     Forces Nodemailer to use a broader set of TLS cipher suites.
+//     Some intermediate proxies on Render's network only support older cipher
+//     sets — this ensures the TLS negotiation can always find a common cipher.
 //
 console.log('🔧 [email.util] Creating Nodemailer SMTP transporter...');
-console.log(`   host    : smtp.gmail.com`);
-console.log(`   port    : 587`);
-console.log(`   secure  : false (STARTTLS upgrade via requireTLS)`);
-console.log(`   user    : ${EMAIL_USER || '⚠️  NOT SET'}`);
-console.log(`   pass    : ${EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET'}`);
+console.log(`   host       : smtp.gmail.com`);
+console.log(`   port       : 587`);
+console.log(`   secure     : false  (connection starts plain, upgrades via STARTTLS)`);
+console.log(`   requireTLS : true   (STARTTLS upgrade enforced before any auth/data)`);
+console.log(`   timeouts   : 60000ms each (connection / greeting / socket)`);
+console.log(`   ciphers    : SSLv3  (broad cipher set for Render proxy compatibility)`);
+console.log(`   user       : ${EMAIL_USER || '⚠️  NOT SET'}`);
+console.log(`   pass       : ${EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET'}`);
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',   // Direct SMTP host — no `service` shorthand
-  port: 587,                // STARTTLS port — most open on cloud providers
-  secure: false,            // false = plain start, then upgrade to TLS via STARTTLS
-  requireTLS: true,         // Force STARTTLS upgrade before any auth/data
+  port: 587,                // Standard STARTTLS submission port
+  secure: false,            // MUST be false for port 587 (starts plain, upgrades)
+  requireTLS: true,         // Force STARTTLS upgrade — Gmail rejects auth without it
+
   auth: {
-    user: EMAIL_USER,       // Your Gmail address (EMAIL_USER env var)
-    pass: EMAIL_PASS,       // 16-char Gmail App Password (EMAIL_PASS env var)
-                            // NOT your Gmail login password — App Password only!
+    user: process.env.EMAIL_USER,  // Your Gmail address
+    pass: process.env.EMAIL_PASS,  // Gmail App Password (16 chars, not your login password)
   },
+
+  connectionTimeout: 60000, // 60s to establish TCP connection
+  greetingTimeout:   60000, // 60s to receive SMTP greeting (220 smtp.gmail.com ...)
+  socketTimeout:     60000, // 60s max idle time per SMTP command
+
   tls: {
-    rejectUnauthorized: false, // Allow connections through Render's network proxies
+    ciphers:              'SSLv3', // Broad cipher set — ensures compatibility with Render proxies
+    rejectUnauthorized:   false,   // Skip certificate chain validation for intermediate hops
   },
-  connectionTimeout: 30000, // 30s — time to establish TCP connection
-  greetingTimeout:   30000, // 30s — time to receive SMTP server greeting (220 ...)
-  socketTimeout:     30000, // 30s — max idle time on the socket during a command
 });
 
 // ─── Verify SMTP connection on server startup ─────────────────────────────────
