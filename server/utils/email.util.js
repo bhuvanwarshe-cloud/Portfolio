@@ -60,33 +60,32 @@ if (!EMAIL_PASS) {
 //     sets — this ensures the TLS negotiation can always find a common cipher.
 //
 console.log('🔧 [email.util] Creating Nodemailer SMTP transporter...');
-console.log(`   host       : smtp.gmail.com`);
+console.log(`   host       : smtp-relay.gmail.com  (Google alternate relay — better Render compatibility)`);
 console.log(`   port       : 587`);
-console.log(`   secure     : false  (connection starts plain, upgrades via STARTTLS)`);
-console.log(`   requireTLS : true   (STARTTLS upgrade enforced before any auth/data)`);
-console.log(`   timeouts   : 60000ms each (connection / greeting / socket)`);
-console.log(`   ciphers    : SSLv3  (broad cipher set for Render proxy compatibility)`);
+console.log(`   secure     : false  (starts plain, upgrades via STARTTLS)`);
+console.log(`   requireTLS : true   (forces STARTTLS before any auth/data)`);
+console.log(`   timeouts   : 120000ms each (connection / greeting / socket)`);
 console.log(`   user       : ${EMAIL_USER || '⚠️  NOT SET'}`);
 console.log(`   pass       : ${EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET'}`);
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',   // Direct SMTP host — no `service` shorthand
-  port: 587,                // Standard STARTTLS submission port
-  secure: false,            // MUST be false for port 587 (starts plain, upgrades)
-  requireTLS: true,         // Force STARTTLS upgrade — Gmail rejects auth without it
+  host: 'smtp-relay.gmail.com', // Google's alternate SMTP relay — more stable on cloud providers
+                                 // like Render than smtp.gmail.com on restricted networks
+  port: 587,                     // Standard STARTTLS submission port
+  secure: false,                 // false = start plain, upgrade to TLS via STARTTLS (required for 587)
+  requireTLS: true,              // Enforce STARTTLS upgrade before any credentials are sent
 
   auth: {
-    user: process.env.EMAIL_USER,  // Your Gmail address
-    pass: process.env.EMAIL_PASS,  // Gmail App Password (16 chars, not your login password)
+    user: process.env.EMAIL_USER, // Your Gmail address (set in Render environment variables)
+    pass: process.env.EMAIL_PASS, // 16-char Gmail App Password — NOT your Gmail login password
   },
 
-  connectionTimeout: 60000, // 60s to establish TCP connection
-  greetingTimeout:   60000, // 60s to receive SMTP greeting (220 smtp.gmail.com ...)
-  socketTimeout:     60000, // 60s max idle time per SMTP command
+  connectionTimeout: 120000,     // 120s — generous time for Render cold start TCP connection
+  greetingTimeout:   120000,     // 120s — wait for SMTP server greeting (220 smtp-relay.gmail.com)
+  socketTimeout:     120000,     // 120s — max idle time per SMTP command exchange
 
   tls: {
-    ciphers:              'SSLv3', // Broad cipher set — ensures compatibility with Render proxies
-    rejectUnauthorized:   false,   // Skip certificate chain validation for intermediate hops
+    rejectUnauthorized: false,   // Allow TLS through Render's intermediate network proxies
   },
 });
 
@@ -98,7 +97,7 @@ const transporter = nodemailer.createTransport({
 //   EAUTH        → wrong EMAIL_USER or EMAIL_PASS (most common issue)
 //   ETIMEDOUT    → network/proxy issue, adjust timeouts
 //
-console.log('🔍 [email.util] Verifying SMTP connection to smtp.gmail.com:587...');
+console.log('🔍 [email.util] Verifying SMTP connection to smtp-relay.gmail.com:587...');
 
 transporter.verify((error, success) => {
   if (error) {
