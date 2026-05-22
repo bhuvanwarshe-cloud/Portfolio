@@ -60,44 +60,45 @@ if (!EMAIL_PASS) {
 //     sets — this ensures the TLS negotiation can always find a common cipher.
 //
 console.log('🔧 [email.util] Creating Nodemailer SMTP transporter...');
-console.log(`   host       : smtp-relay.gmail.com  (Google alternate relay — better Render compatibility)`);
-console.log(`   port       : 587`);
-console.log(`   secure     : false  (starts plain, upgrades via STARTTLS)`);
-console.log(`   requireTLS : true   (forces STARTTLS before any auth/data)`);
+console.log(`   host       : smtp.gmail.com`);
+console.log(`   port       : 465  (SSL — encrypted from connection start)`);
+console.log(`   secure     : true (SSL/TLS from byte 1, no STARTTLS handshake)`);
 console.log(`   timeouts   : 120000ms each (connection / greeting / socket)`);
+console.log(`   debug      : true (every SMTP command will be logged to Render)`);
 console.log(`   user       : ${EMAIL_USER || '⚠️  NOT SET'}`);
-console.log(`   pass       : ${EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET'}`);
+console.log(`   pass       : ${EMAIL_PASS ? '✅ set (hidden)' : '⚠️  NOT SET — must be a 16-char Gmail App Password'}`);
 
 const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.gmail.com', // Google's alternate SMTP relay — more stable on cloud providers
-                                 // like Render than smtp.gmail.com on restricted networks
-  port: 587,                     // Standard STARTTLS submission port
-  secure: false,                 // false = start plain, upgrade to TLS via STARTTLS (required for 587)
-  requireTLS: true,              // Enforce STARTTLS upgrade before any credentials are sent
+  host: 'smtp.gmail.com',  // Gmail's primary SMTP server
+  port: 465,               // SSL port — encrypted from the very first byte (no STARTTLS upgrade needed)
+  secure: true,            // true = SSL/TLS from connection start; required for port 465
 
   auth: {
-    user: process.env.EMAIL_USER, // Your Gmail address (set in Render environment variables)
-    pass: process.env.EMAIL_PASS, // 16-char Gmail App Password — NOT your Gmail login password
+    user: process.env.EMAIL_USER, // Your Gmail address — set in Render environment variables
+    pass: process.env.EMAIL_PASS, // 16-char Gmail App Password (NOT your Gmail login password)
+                                   // Generate at: myaccount.google.com/apppasswords
   },
 
-  connectionTimeout: 120000,     // 120s — generous time for Render cold start TCP connection
-  greetingTimeout:   120000,     // 120s — wait for SMTP server greeting (220 smtp-relay.gmail.com)
-  socketTimeout:     120000,     // 120s — max idle time per SMTP command exchange
+  connectionTimeout: 120000, // 120s — enough for Render free tier cold start TCP connection
+  greetingTimeout:   120000, // 120s — wait for SSL handshake + SMTP greeting (220 smtp.gmail.com)
+  socketTimeout:     120000, // 120s — max idle time per SMTP command
 
   tls: {
-    rejectUnauthorized: false,   // Allow TLS through Render's intermediate network proxies
+    rejectUnauthorized: false, // Allow TLS through Render's intermediate network proxies
   },
+
+  debug:  true, // Log every SMTP command sent and response received — visible in Render logs
+  logger: true, // Use Nodemailer's built-in logger (writes to stdout — captured by Render)
 });
 
 // ─── Verify SMTP connection on server startup ─────────────────────────────────
-// transporter.verify() opens a real connection to smtp.gmail.com and checks that
-// the credentials authenticate correctly. If this fails, the error message tells
-// you exactly what's wrong:
-//   ECONNREFUSED → port blocked by Render firewall
-//   EAUTH        → wrong EMAIL_USER or EMAIL_PASS (most common issue)
-//   ETIMEDOUT    → network/proxy issue, adjust timeouts
+// Opens a real SSL connection to smtp.gmail.com:465 and authenticates.
+// If this fails, the error tells you exactly what's wrong:
+//   EAUTH        → EMAIL_PASS is wrong / not a Gmail App Password
+//   ECONNREFUSED → Port 465 is blocked on Render's network
+//   ETIMEDOUT    → Connection timed out (rare with 120s, usually a firewall issue)
 //
-console.log('🔍 [email.util] Verifying SMTP connection to smtp-relay.gmail.com:587...');
+console.log('🔍 [email.util] Verifying SMTP connection to smtp.gmail.com:465 (SSL)...');
 
 transporter.verify((error, success) => {
   if (error) {
@@ -108,11 +109,12 @@ transporter.verify((error, success) => {
     console.error(`   response : ${error.response || 'N/A'}`);
     console.error('   stack    :\n', error.stack);
     console.error('   ──────────────────────────────────────────────────────────');
-    console.error('   ➜ EAUTH?     → EMAIL_PASS is wrong or not a Gmail App Password');
-    console.error('   ➜ ETIMEDOUT? → Render is blocking port 587, try port 465');
-    console.error('   ➜ ECONNREFUSED? → Port 587 is blocked on this network');
+    console.error('   ➜ EAUTH?        → EMAIL_PASS wrong or not a Gmail App Password');
+    console.error('   ➜ ECONNREFUSED? → Port 465 is blocked on Render — contact support');
+    console.error('   ➜ ETIMEDOUT?    → SSL handshake timed out — check Render firewall');
   } else {
-    console.log('✅ [email.util] SMTP connected and authenticated — ready to send emails!');
+    console.log('✅ [email.util] SMTP verified — smtp.gmail.com:465 connected and authenticated!');
+
   }
 });
 
